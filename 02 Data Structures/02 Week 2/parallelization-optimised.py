@@ -1,11 +1,10 @@
 # python3
 
-# Optimised by: removing the lambda function that compares the workers priorityIndex and whenAvailable
-class Worker:
-    # Class to describe a Worker Thread
-    def __init__(self, priorityIndex, whenAvailable):
-        self.priorityIndex = priorityIndex # smaller index, greater importance
-        self.whenAvailable = whenAvailable # the time the Worker is available to perform work
+# Algorithm mimics a set of a number of available parallel worker processes and jobs presented to it.
+# Algo efficiently assigns the workers to the jobs via a (priority) min-heap queue method.
+# Priority is given: 1. to the first available worker; 2. to the lowest-indexed worker
+
+# Optimised by: Removing the Worker class. 
 
 class Node:
     # Class to indicate the position of a Worker within the Min-Heap Tree
@@ -17,35 +16,37 @@ class Node:
         try:
             self.leftChild = minHeap[self.leftChildIndex]
         except IndexError:
-            self.leftChild = Worker(float("inf"), float("inf"))
+            self.leftChild = [float("inf"), float("inf")]
         
         try:
             self.rightChild = minHeap[self.rightChildIndex]
         except IndexError:
-            self.rightChild = Worker(float("inf"), float("inf"))
+            self.rightChild = [float("inf"), float("inf")]
 
 class HeapBuilder:
     def __init__(self, noOfWorkers):
         # the index of workers represents the index location of each node in a tree, from L - R.
-        self.workers = [Worker(i, 0) for i in range(noOfWorkers)]
+        # For each worker, the first index represents its priority (where the lower the priority, the greater its importance)
+        # and the second index represents its next available time.
+        self.workers = [[i, 0] for i in range(noOfWorkers)] 
 
     def siftDown(self, i):
         # Function ensures min-heap property is satisfied
         node = Node(i, self.workers)
 
-        if node.leftChild.whenAvailable == node.rightChild.whenAvailable:
-            smallerChild = node.leftChild if node.leftChild.priorityIndex < node.rightChild.priorityIndex else node.rightChild
+        if node.leftChild[1] == node.rightChild[1]:
+            smallerChild = node.leftChild if node.leftChild[0] < node.rightChild[0] else node.rightChild
         else:
-            smallerChild = node.leftChild if node.leftChild.whenAvailable < node.rightChild.whenAvailable else node.rightChild
+            smallerChild = node.leftChild if node.leftChild[1] < node.rightChild[1] else node.rightChild
 
         # the if-else below checks which child (l or r) is the smaller
-        if (smallerChild.priorityIndex == node.leftChild.priorityIndex):
+        if (smallerChild[0] == node.leftChild[0]):
             smallerChildIndex = node.leftChildIndex
         else:
             smallerChildIndex = node.rightChildIndex
 
         # the if-else below checks whether child/parent has a smaller availability; if equal, then to check which has a higher priorityIndex
-        if (smallerChild.whenAvailable < node.worker.whenAvailable) or ((smallerChild.whenAvailable == node.worker.whenAvailable) and (smallerChild.priorityIndex < node.worker.priorityIndex)):
+        if (smallerChild[1] < node.worker[1]) or ((smallerChild[1] == node.worker[1]) and (smallerChild[0] < node.worker[0])):
             self.swapParentAndChild(i, node.worker, smallerChildIndex, smallerChild)
             self.siftDown(smallerChildIndex)
         return
@@ -58,7 +59,7 @@ class HeapBuilder:
         return self.workers[0]
 
     def beginWork(self, workerIndex, timeProcessTakes):
-        self.workers[workerIndex].whenAvailable += timeProcessTakes
+        self.workers[workerIndex][1] += timeProcessTakes
         self.siftDown(workerIndex)
         return
 
@@ -85,8 +86,8 @@ class JobQueue:
             timeJobTakes = self.jobs[i]
             worker = self.allWorkers.extractMin()
 
-            self.assigned_workers.append(worker.priorityIndex)
-            self.start_times.append(worker.whenAvailable)
+            self.assigned_workers.append(worker[0])
+            self.start_times.append(worker[1])
             self.allWorkers.beginWork(0, timeJobTakes)
 
     def solve(self):

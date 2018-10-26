@@ -27,7 +27,6 @@ class TreeHeight:
                                 self.root = childIndex # IMPORTANT: Amend
                         else:
                                 self.allNodes[parentNode].append(childIndex)
-                # print (self.allNodes)
                                 
         # [R, 0, 4, 0, 3] is the parent of
         # [0, 1, 2, 3, 4]
